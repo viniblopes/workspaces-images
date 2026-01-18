@@ -38,8 +38,8 @@ echo "Flutter: $(which flutter 2>/dev/null || echo 'Restart terminal to use')"
 echo "==================================="
 
 # Call the DinD custom startup (which handles Docker daemon)
-if [ -f /dockerstartup/install/ubuntu/install/dind/custom_startup.sh ]; then
-  source /dockerstartup/install/ubuntu/install/dind/custom_startup.sh
+if [ -f /dockerstartup/dind_startup.sh ]; then
+  source /dockerstartup/dind_startup.sh
 else
   # Fallback to default startup
   exec "$@"
