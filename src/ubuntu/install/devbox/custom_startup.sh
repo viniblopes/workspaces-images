@@ -6,6 +6,10 @@ set -e
 
 echo "Starting devbox initialization..."
 
+# Disable core dumps system-wide
+ulimit -c 0
+echo "Core dumps disabled"
+
 # Configure Session Autostart (Keyboard & Window Snapping)
 mkdir -p $HOME/.config/autostart
 mkdir -p $HOME/.local/bin
