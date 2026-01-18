@@ -13,22 +13,40 @@ mkdir -p $HOME/.local/bin
 # Create session setup script
 cat > $HOME/.local/bin/session_config.sh <<'EOF'
 #!/bin/bash
-# 1. Configure formatting and inputs
-setxkbmap -layout br,us -variant abnt2, -option grp:alt_shift_toggle
 
-# 2. Configure Windows-like Tiling (Snapping)
-# Wait for xfconfd
-sleep 3
-# Enable tiling when moving to edges
+# Configure Windows-like Tiling (Snapping)
+# Wait for xfconfd to be ready
+sleep 5
+
+# Enable tiling when moving to edges (main feature for drag-to-corner)
 xfconf-query -c xfwm4 -p /general/tile_on_move -n -t bool -s true
+
 # Enable snapping to borders
 xfconf-query -c xfwm4 -p /general/snap_to_border -n -t bool -s true
+
 # Enable snapping to other windows
 xfconf-query -c xfwm4 -p /general/snap_to_windows -n -t bool -s true
-# Set snap width (pixel distance to grab the window)
-xfconf-query -c xfwm4 -p /general/snap_width -n -t int -s 20
-# Disable wrap workspaces when dragging off screen (improves snapping feel)
+
+# Set snap width (pixel distance to trigger snap - increased for touch screens)
+xfconf-query -c xfwm4 -p /general/snap_width -n -t int -s 30
+
+# Disable wrap workspaces when dragging off screen
 xfconf-query -c xfwm4 -p /general/wrap_windows -n -t bool -s false
+
+# Enable wrap resistance (helps with edge detection)
+xfconf-query -c xfwm4 -p /general/wrap_resistance -n -t int -s 10
+
+# Set margin width for better edge detection
+xfconf-query -c xfwm4 -p /general/margin_left -n -t int -s 0
+xfconf-query -c xfwm4 -p /general/margin_right -n -t int -s 0
+xfconf-query -c xfwm4 -p /general/margin_top -n -t int -s 0
+xfconf-query -c xfwm4 -p /general/margin_bottom -n -t int -s 0
+
+# Enable easy click (allows moving windows by Alt+Click anywhere)
+xfconf-query -c xfwm4 -p /general/easy_click -n -t string -s "Alt"
+
+# Restart xfwm4 to apply changes
+xfwm4 --replace &
 EOF
 
 chmod +x $HOME/.local/bin/session_config.sh
