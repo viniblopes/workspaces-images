@@ -25,11 +25,6 @@ RUN apt-get update && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
 
-# Disable core dumps system-wide
-RUN echo "* soft core 0" >> /etc/security/limits.conf && \
-  echo "* hard core 0" >> /etc/security/limits.conf && \
-  echo "kernel.core_pattern = /dev/null" >> /etc/sysctl.conf
-
 # Startup Scripts
 COPY ./src/ubuntu/install/devbox/custom_startup.sh $STARTUPDIR/custom_startup.sh
 RUN chmod 755 $STARTUPDIR/custom_startup.sh

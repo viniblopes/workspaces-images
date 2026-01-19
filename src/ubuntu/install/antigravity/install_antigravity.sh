@@ -19,21 +19,8 @@ echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-cent
 apt-get update
 apt-get install -y antigravity
 
-# Create wrapper script to disable core dumps (must be created first)
-cat > /usr/local/bin/antigravity-wrapper <<'WRAPPER_EOF'
-#!/bin/bash
-# Disable core dumps for Antigravity
-ulimit -c 0
-# Run Antigravity
-exec antigravity "$@"
-WRAPPER_EOF
-
-chmod +x /usr/local/bin/antigravity-wrapper
-
-# Update or create desktop file to use wrapper
+# Create desktop icon if .desktop file exists
 if [ -f /usr/share/applications/antigravity.desktop ]; then
-  # Update existing desktop file to use wrapper
-  sed -i 's|^Exec=antigravity|Exec=/usr/local/bin/antigravity-wrapper|g' /usr/share/applications/antigravity.desktop
   cp /usr/share/applications/antigravity.desktop $HOME/Desktop/
   chmod +x $HOME/Desktop/antigravity.desktop
   chown 1000:1000 $HOME/Desktop/antigravity.desktop
@@ -45,7 +32,7 @@ Version=1.0
 Type=Application
 Name=Antigravity IDE
 Comment=Antigravity IDE by Google
-Exec=/usr/local/bin/antigravity-wrapper
+Exec=antigravity
 Icon=antigravity
 Categories=Development;IDE;
 Terminal=false
