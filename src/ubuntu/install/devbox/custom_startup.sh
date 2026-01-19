@@ -25,60 +25,44 @@ echo "=== Session Config Started at $(date) ===" > "$LOG_FILE"
 # Wait for XFCE to be fully ready
 echo "Waiting for XFCE..." >> "$LOG_FILE"
 for i in {1..30}; do
-  if pgrep -x "xfwm4" > /dev/null; then
-    echo "xfwm4 found after $i seconds" >> "$LOG_FILE"
+  if pgrep -x "xfwm4" > /dev/null && pgrep -x "xfconfd" > /dev/null; then
+    echo "xfwm4 and xfconfd found after $i seconds" >> "$LOG_FILE"
     break
   fi
   sleep 1
 done
 
 # Additional wait to ensure xfconf is ready
-sleep 3
-
-# Create xfwm4 config directory if it doesn't exist
-mkdir -p $HOME/.config/xfce4/xfconf/xfce-perchannel-xml
-
-# Create xfwm4 configuration file directly
-cat > $HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml <<'XFWM4_EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<channel name="xfwm4" version="1.0">
-  <property name="general" type="empty">
-    <property name="tile_on_move" type="bool" value="true"/>
-    <property name="snap_to_border" type="bool" value="true"/>
-    <property name="snap_to_windows" type="bool" value="true"/>
-    <property name="snap_width" type="int" value="30"/>
-    <property name="wrap_windows" type="bool" value="false"/>
-    <property name="wrap_resistance" type="int" value="10"/>
-    <property name="margin_left" type="int" value="0"/>
-    <property name="margin_right" type="int" value="0"/>
-    <property name="margin_top" type="int" value="0"/>
-    <property name="margin_bottom" type="int" value="0"/>
-    <property name="easy_click" type="string" value="Alt"/>
-    <property name="prevent_focus_stealing" type="bool" value="false"/>
-    <property name="placement_ratio" type="int" value="20"/>
-  </property>
-</channel>
-XFWM4_EOF
-
-echo "xfwm4.xml config file created" >> "$LOG_FILE"
-
-# Also try to set via xfconf-query as backup
-if command -v xfconf-query &> /dev/null; then
-  echo "Applying settings via xfconf-query..." >> "$LOG_FILE"
-  xfconf-query -c xfwm4 -p /general/tile_on_move -n -t bool -s true 2>> "$LOG_FILE" || true
-  xfconf-query -c xfwm4 -p /general/snap_to_border -n -t bool -s true 2>> "$LOG_FILE" || true
-  xfconf-query -c xfwm4 -p /general/snap_to_windows -n -t bool -s true 2>> "$LOG_FILE" || true
-  xfconf-query -c xfwm4 -p /general/snap_width -n -t int -s 30 2>> "$LOG_FILE" || true
-  xfconf-query -c xfwm4 -p /general/wrap_windows -n -t bool -s false 2>> "$LOG_FILE" || true
-  xfconf-query -c xfwm4 -p /general/wrap_resistance -n -t int -s 10 2>> "$LOG_FILE" || true
-  xfconf-query -c xfwm4 -p /general/easy_click -n -t string -s "Alt" 2>> "$LOG_FILE" || true
-  echo "xfconf-query commands executed" >> "$LOG_FILE"
-fi
-
-# Restart xfwm4 to apply changes
-echo "Restarting xfwm4..." >> "$LOG_FILE"
-xfwm4 --replace &
 sleep 2
+
+# Apply window tiling settings via xfconf-query
+if command -v xfconf-query &> /dev/null; then
+  echo "Applying window tiling settings..." >> "$LOG_FILE"
+  
+  # Enable tiling when moving to edges (main feature for drag-to-corner)
+  xfconf-query -c xfwm4 -p /general/tile_on_move -s true 2>> "$LOG_FILE" || \
+    xfconf-query -c xfwm4 -p /general/tile_on_move -n -t bool -s true 2>> "$LOG_FILE"
+  
+  # Enable snapping to borders
+  xfconf-query -c xfwm4 -p /general/snap_to_border -s true 2>> "$LOG_FILE" || \
+    xfconf-query -c xfwm4 -p /general/snap_to_border -n -t bool -s true 2>> "$LOG_FILE"
+  
+  # Enable snapping to other windows
+  xfconf-query -c xfwm4 -p /general/snap_to_windows -s true 2>> "$LOG_FILE" || \
+    xfconf-query -c xfwm4 -p /general/snap_to_windows -n -t bool -s true 2>> "$LOG_FILE"
+  
+  # Set snap width (pixel distance to trigger snap - increased for touch screens)
+  xfconf-query -c xfwm4 -p /general/snap_width -s 30 2>> "$LOG_FILE" || \
+    xfconf-query -c xfwm4 -p /general/snap_width -n -t int -s 30 2>> "$LOG_FILE"
+  
+  # Disable wrap workspaces when dragging off screen
+  xfconf-query -c xfwm4 -p /general/wrap_windows -s false 2>> "$LOG_FILE" || \
+    xfconf-query -c xfwm4 -p /general/wrap_windows -n -t bool -s false 2>> "$LOG_FILE"
+  
+  echo "Window tiling settings applied" >> "$LOG_FILE"
+else
+  echo "xfconf-query not found!" >> "$LOG_FILE"
+fi
 
 echo "=== Session Config Completed at $(date) ===" >> "$LOG_FILE"
 echo "Check /tmp/session_config.log for details"

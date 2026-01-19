@@ -19,8 +19,21 @@ echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-cent
 apt-get update
 apt-get install -y antigravity
 
-# Create desktop icon if .desktop file exists
+# Create wrapper script to disable core dumps (must be created first)
+cat > /usr/local/bin/antigravity-wrapper <<'WRAPPER_EOF'
+#!/bin/bash
+# Disable core dumps for Antigravity
+ulimit -c 0
+# Run Antigravity
+exec antigravity "$@"
+WRAPPER_EOF
+
+chmod +x /usr/local/bin/antigravity-wrapper
+
+# Update or create desktop file to use wrapper
 if [ -f /usr/share/applications/antigravity.desktop ]; then
+  # Update existing desktop file to use wrapper
+  sed -i 's|^Exec=antigravity|Exec=/usr/local/bin/antigravity-wrapper|g' /usr/share/applications/antigravity.desktop
   cp /usr/share/applications/antigravity.desktop $HOME/Desktop/
   chmod +x $HOME/Desktop/antigravity.desktop
   chown 1000:1000 $HOME/Desktop/antigravity.desktop
@@ -43,17 +56,6 @@ EOL
   chmod +x $HOME/Desktop/antigravity.desktop
   chown 1000:1000 $HOME/Desktop/antigravity.desktop
 fi
-
-# Create wrapper script to disable core dumps
-cat > /usr/local/bin/antigravity-wrapper <<'WRAPPER_EOF'
-#!/bin/bash
-# Disable core dumps for Antigravity
-ulimit -c 0
-# Run Antigravity
-exec antigravity "$@"
-WRAPPER_EOF
-
-chmod +x /usr/local/bin/antigravity-wrapper
 
 # Cleanup for app layer
 chown -R 1000:0 $HOME
