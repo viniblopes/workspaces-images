@@ -40,7 +40,8 @@ RUN apt-get update && \
 # Disable core dumps system-wide
 RUN echo "* soft core 0" >> /etc/security/limits.conf && \
   echo "* hard core 0" >> /etc/security/limits.conf && \
-  echo "ulimit -c 0" >> /etc/profile.d/disable-coredumps.sh
+  echo "ulimit -c 0" >> /etc/profile.d/disable-coredumps.sh && \
+  echo "session required pam_limits.so" >> /etc/pam.d/common-session
 
 # Startup Scripts
 COPY ./src/ubuntu/install/devbox/custom_startup.sh $STARTUPDIR/custom_startup.sh

@@ -19,32 +19,7 @@ echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-cent
 apt-get update
 apt-get install -y antigravity
 
-# Create desktop icon if .desktop file exists
-if [ -f /usr/share/applications/antigravity.desktop ]; then
-  cp /usr/share/applications/antigravity.desktop $HOME/Desktop/
-  chmod +x $HOME/Desktop/antigravity.desktop
-  chown 1000:1000 $HOME/Desktop/antigravity.desktop
-else
-  # Create custom desktop entry if not provided by package
-  cat > /usr/share/applications/antigravity.desktop <<EOL
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Antigravity IDE
-Comment=Antigravity IDE by Google
-Exec=antigravity
-Icon=antigravity
-Categories=Development;IDE;
-Terminal=false
-StartupNotify=true
-EOL
-  chmod +x /usr/share/applications/antigravity.desktop
-  cp /usr/share/applications/antigravity.desktop $HOME/Desktop/antigravity.desktop
-  chmod +x $HOME/Desktop/antigravity.desktop
-  chown 1000:1000 $HOME/Desktop/antigravity.desktop
-fi
-
-# Create wrapper script to launch Antigravity with crash prevention flags
+# Create wrapper script FIRST, before modifying desktop entries
 cat > /usr/local/bin/antigravity-wrapper <<'EOL'
 #!/bin/bash
 # Disable core dumps for this session
@@ -65,14 +40,32 @@ EOL
 
 chmod +x /usr/local/bin/antigravity-wrapper
 
-# Update desktop entry to use wrapper script
-if [ -f $HOME/Desktop/antigravity.desktop ]; then
-  sed -i 's|^Exec=antigravity|Exec=/usr/local/bin/antigravity-wrapper|g' $HOME/Desktop/antigravity.desktop
+# Create or update desktop entry to use wrapper
+if [ ! -f /usr/share/applications/antigravity.desktop ]; then
+  # Create custom desktop entry if not provided by package
+  cat > /usr/share/applications/antigravity.desktop <<EOL
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Antigravity IDE
+Comment=Antigravity IDE by Google
+Exec=/usr/local/bin/antigravity-wrapper %F
+Icon=antigravity
+Categories=Development;IDE;
+Terminal=false
+StartupNotify=true
+EOL
+  chmod +x /usr/share/applications/antigravity.desktop
 fi
 
-if [ -f /usr/share/applications/antigravity.desktop ]; then
-  sed -i 's|^Exec=antigravity|Exec=/usr/local/bin/antigravity-wrapper|g' /usr/share/applications/antigravity.desktop
-fi
+# Update desktop entry in /usr/share/applications to use wrapper
+sed -i 's|^Exec=/usr/share/antigravity/antigravity|Exec=/usr/local/bin/antigravity-wrapper|g' /usr/share/applications/antigravity.desktop
+sed -i 's|^Exec=antigravity\s|Exec=/usr/local/bin/antigravity-wrapper |g' /usr/share/applications/antigravity.desktop
+
+# Now copy the updated desktop entry to Desktop
+cp /usr/share/applications/antigravity.desktop $HOME/Desktop/
+chmod +x $HOME/Desktop/antigravity.desktop
+chown 1000:1000 $HOME/Desktop/antigravity.desktop
 
 # Cleanup for app layer
 chown -R 1000:0 $HOME
