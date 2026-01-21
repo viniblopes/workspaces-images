@@ -4,6 +4,9 @@ set -e
 # Custom startup script for devbox image
 # This script sources environment variables and then calls the DinD startup
 
+# Disable core dumps to prevent large crash files on Desktop
+ulimit -c 0
+
 echo "Starting devbox initialization..."
 
 # Configure Session Autostart

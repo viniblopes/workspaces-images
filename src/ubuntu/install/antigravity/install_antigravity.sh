@@ -44,6 +44,36 @@ EOL
   chown 1000:1000 $HOME/Desktop/antigravity.desktop
 fi
 
+# Create wrapper script to launch Antigravity with crash prevention flags
+cat > /usr/local/bin/antigravity-wrapper <<'EOL'
+#!/bin/bash
+# Disable core dumps for this session
+ulimit -c 0
+
+# Launch Antigravity with minimal flags for container compatibility
+# --no-sandbox: Required in containers (no setuid sandbox available)
+# --disable-setuid-sandbox: Required in containers
+# --disable-gpu: Prevents GPU-related crashes in virtualized environments
+# --disable-dev-shm-usage: Avoids /dev/shm size limitations in containers
+exec /usr/share/antigravity/antigravity \
+  --no-sandbox \
+  --disable-setuid-sandbox \
+  --disable-gpu \
+  --disable-dev-shm-usage \
+  "$@"
+EOL
+
+chmod +x /usr/local/bin/antigravity-wrapper
+
+# Update desktop entry to use wrapper script
+if [ -f $HOME/Desktop/antigravity.desktop ]; then
+  sed -i 's|^Exec=antigravity|Exec=/usr/local/bin/antigravity-wrapper|g' $HOME/Desktop/antigravity.desktop
+fi
+
+if [ -f /usr/share/applications/antigravity.desktop ]; then
+  sed -i 's|^Exec=antigravity|Exec=/usr/local/bin/antigravity-wrapper|g' /usr/share/applications/antigravity.desktop
+fi
+
 # Cleanup for app layer
 chown -R 1000:0 $HOME
 find /usr/share/ -name "icon-theme.cache" -exec rm -f {} \;

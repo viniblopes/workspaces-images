@@ -21,9 +21,26 @@ RUN apt-get update && \
   libgl1-mesa-dri \
   libgl1 \
   libegl1 \
-  libgles2 && \
+  libgles2 \
+  libnss3 \
+  libatk1.0-0 \
+  libatk-bridge2.0-0 \
+  libcups2 \
+  libdrm2 \
+  libxkbcommon0 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxfixes3 \
+  libxrandr2 \
+  libgbm1 \
+  libasound2 && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/*
+
+# Disable core dumps system-wide
+RUN echo "* soft core 0" >> /etc/security/limits.conf && \
+  echo "* hard core 0" >> /etc/security/limits.conf && \
+  echo "ulimit -c 0" >> /etc/profile.d/disable-coredumps.sh
 
 # Startup Scripts
 COPY ./src/ubuntu/install/devbox/custom_startup.sh $STARTUPDIR/custom_startup.sh
