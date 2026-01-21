@@ -7,6 +7,11 @@ set -e
 # Disable core dumps to prevent large crash files on Desktop
 ulimit -c 0
 
+# AMD GPU optimizations for hardware video encoding
+export LIBVA_DRIVER_NAME=radeonsi
+export MESA_LOADER_DRIVER_OVERRIDE=radeonsi
+export AMD_VULKAN_ICD=RADV
+
 echo "Starting devbox initialization..."
 
 # Configure Session Autostart
