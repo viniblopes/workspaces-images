@@ -7,10 +7,15 @@ set -e
 # Disable core dumps to prevent large crash files on Desktop
 ulimit -c 0
 
-# AMD GPU optimizations for hardware video encoding
-export LIBVA_DRIVER_NAME=radeonsi
-export MESA_LOADER_DRIVER_OVERRIDE=radeonsi
-export AMD_VULKAN_ICD=RADV
+# Clean up any existing core dumps (safety measure)
+find $HOME/Desktop -name "core.*" -type f -delete 2>/dev/null || true
+find $HOME -maxdepth 1 -name "core.*" -type f -delete 2>/dev/null || true
+
+# Verify core dumps are disabled
+if [ "$(ulimit -c)" != "0" ]; then
+  echo "WARNING: Failed to disable core dumps, forcing to 0"
+  ulimit -S -c 0 2>/dev/null || true
+fi
 
 echo "Starting devbox initialization..."
 

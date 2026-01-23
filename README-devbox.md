@@ -206,6 +206,41 @@ docker logs -f kasm_agent
 
 ## 🐛 Troubleshooting
 
+### Core Dump Files Filling Disk
+
+**Problema**: Container não inicia ou está lento devido a arquivos `core.*` enormes no Desktop
+
+**Causa**: Algum aplicativo (Chrome, VS Code, etc.) está crashando e gerando core dumps
+
+**Solução**:
+
+1. **Se o container está rodando**:
+   ```bash
+   # Acesse o container
+   docker exec -it <container-id> bash
+   
+   # Remova os core dumps
+   rm -f ~/Desktop/core.*
+   rm -f ~/core.*
+   ```
+
+2. **Se o container não inicia**:
+   ```bash
+   # Use o script de emergência
+   cd /path/to/workspaces-images
+   ./emergency-cleanup.sh <container-name>
+   ```
+
+3. **Prevenção**: Reconstrua a imagem com as correções mais recentes que desabilitam core dumps
+
+**Verificar se core dumps estão desabilitados**:
+```bash
+# Dentro do container
+ulimit -c
+# Deve retornar: 0
+```
+
+
 ### Build Falha
 
 **Problema**: Erro durante o build da imagem
