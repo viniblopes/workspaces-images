@@ -15,7 +15,7 @@ ENV DEBUG=false \
   INST_DIR=$STARTUPDIR/install
 
 # Install Mesa/OpenGL libraries for graphics support
-RUN apt-get update && \
+RUN apt-get update --allow-releaseinfo-change || apt-get update && \
   apt-get install -y --no-install-recommends \
   mesa-utils \
   libgl1-mesa-dri \
@@ -48,7 +48,10 @@ RUN echo "* soft core 0" >> /etc/security/limits.conf && \
   mkdir -p /etc/sysctl.d && \
   echo "kernel.core_pattern=/dev/null" > /etc/sysctl.d/50-coredump.conf && \
   echo "kernel.core_uses_pid=0" >> /etc/sysctl.d/50-coredump.conf && \
-  echo "fs.suid_dumpable=0" >> /etc/sysctl.d/50-coredump.conf
+  echo "fs.suid_dumpable=0" >> /etc/sysctl.d/50-coredump.conf && \
+  # Additional enforcement in bashrc and profile
+  echo "ulimit -S -c 0 2>/dev/null || true" >> /etc/bash.bashrc && \
+  echo "ulimit -S -c 0 2>/dev/null || true" >> /etc/profile
 
 
 # Startup Scripts

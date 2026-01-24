@@ -1,94 +1,63 @@
-#!/bin/bash
-# Script para limpar o repositório e manter apenas arquivos necessários para devbox
+#!/usr/bin/env bash
+# Organizar repositório antes do commit
+# Remove arquivos temporários e organiza documentação
 
 set -e
 
-echo "🧹 Limpando repositório..."
-echo ""
+echo "🧹 Organizando repositório..."
 
-# Remover todos os Dockerfiles exceto o devbox
-echo "Removendo Dockerfiles desnecessários..."
-find . -maxdepth 1 -name "dockerfile-kasm-*" ! -name "dockerfile-kasm-ubuntu-noble-devbox" -type f -delete
+# Criar diretório docs se não existir
+mkdir -p docs
 
-# Remover diretório docs (documentação de outras imagens)
-if [ -d "docs" ]; then
-    echo "Removendo diretório docs..."
-    rm -rf docs
-fi
+# Mover documentação importante para docs/
+echo "📁 Movendo documentação..."
+mv FINAL-CONFIG.md docs/ 2>/dev/null || true
+mv CORE-DUMP-FIX-V2.md docs/ 2>/dev/null || true
+mv KASMVNC-PERFORMANCE-PLAN.md docs/ 2>/dev/null || true
+mv HIDPI-RESOLUTION-ADJUSTMENT.md docs/ 2>/dev/null || true
+mv PERFORMANCE-QUICKSTART.md docs/ 2>/dev/null || true
 
-# Remover diretório ci-scripts (não necessário para build manual)
-if [ -d "ci-scripts" ]; then
-    echo "Removendo ci-scripts..."
-    rm -rf ci-scripts
-fi
+# Remover arquivos temporários/obsoletos
+echo "🗑️  Removendo arquivos temporários..."
+rm -f CORE-DUMP-FIX-SUMMARY.md
+rm -f BUILD-STABLE.md
+rm -f ROLLBACK-COMPLETE.md
+rm -f FIXES-SUMMARY.md
+rm -f CLEANUP.md
 
-# Remover .gitlab-ci.yml
-if [ -f ".gitlab-ci.yml" ]; then
-    echo "Removendo .gitlab-ci.yml..."
-    rm -f .gitlab-ci.yml
-fi
+# Remover scripts temporários de teste
+rm -f apply-level2-performance.sh
+rm -f apply-level2a-performance.sh
+rm -f apply-level2b-performance.sh
+rm -f cleanup-core-dumps.sh
+rm -f fix-antigravity-desktop.sh
+rm -f emergency-cleanup.sh
 
-# Remover logs
-echo "Removendo arquivos de log..."
-rm -f build.log push.log "log executado.log" log 2>/dev/null || true
-
-# Limpar diretórios src que não são usados pela devbox
-echo "Limpando diretórios src não utilizados..."
-
-# Lista de diretórios que DEVEM ser mantidos
-KEEP_DIRS=(
-    "antigravity"
-    "dbeaver"
-    "devbox"
-    "flutter"
-    "fvm"
-    "redroid"
-    "dind"
-    "tools"
-    "misc"
-    "chrome"
-    "chromium"
-    "sublime_text"
-    "vs_code"
-    "postman"
-    "gimp"
-    "zoom"
-    "cleanup"
-)
-
-# Remover outros diretórios em src/ubuntu/install/
-if [ -d "src/ubuntu/install" ]; then
-    for dir in src/ubuntu/install/*/; do
-        dirname=$(basename "$dir")
-        keep=false
-        for keep_dir in "${KEEP_DIRS[@]}"; do
-            if [ "$dirname" == "$keep_dir" ]; then
-                keep=true
-                break
-            fi
-        done
-        
-        if [ "$keep" = false ]; then
-            echo "  Removendo src/ubuntu/install/$dirname/"
-            rm -rf "$dir"
-        fi
-    done
-fi
-
-# Remover outros diretórios src não necessários
-echo "Removendo outros diretórios src..."
-rm -rf src/alpine src/debian src/fedora src/kali src/kasmos src/opensuse src/oracle src/parrot src/rhel src/rockylinux 2>/dev/null || true
-
-echo ""
-echo "✅ Limpeza concluída!"
-echo ""
-echo "📁 Estrutura mantida:"
-echo "  - dockerfile-kasm-ubuntu-noble-devbox"
-echo "  - README.md"
-echo "  - README-devbox.md"
-echo "  - LICENSE.md"
+# Manter apenas scripts úteis
+echo "✅ Mantendo scripts úteis:"
 echo "  - build-and-push.sh"
-echo "  - CLEANUP.md"
-echo "  - src/ubuntu/install/ (apenas diretórios necessários)"
+echo "  - cleanup-repo.sh (este script)"
+
+# Remover backups do Dockerfile se existirem
+rm -f dockerfile-kasm-ubuntu-noble-devbox.backup
+
 echo ""
-echo "Para ver o que foi mantido, consulte CLEANUP.md"
+echo "✅ Repositório organizado!"
+echo ""
+echo "📂 Estrutura:"
+echo "  /"
+echo "  ├── docs/"
+echo "  │   ├── FINAL-CONFIG.md"
+echo "  │   ├── CORE-DUMP-FIX-V2.md"
+echo "  │   ├── KASMVNC-PERFORMANCE-PLAN.md"
+echo "  │   ├── HIDPI-RESOLUTION-ADJUSTMENT.md"
+echo "  │   └── PERFORMANCE-QUICKSTART.md"
+echo "  ├── src/"
+echo "  ├── dockerfile-kasm-ubuntu-noble-devbox"
+echo "  ├── build-and-push.sh"
+echo "  └── README.md"
+echo ""
+echo "📝 Próximos passos:"
+echo "1. git add ."
+echo "2. git commit -m 'fix: resolve core dumps and optimize KasmVNC performance'"
+echo "3. git push origin develop"

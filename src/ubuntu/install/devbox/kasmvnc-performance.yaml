@@ -1,0 +1,58 @@
+# KasmVNC Performance Configuration
+# Otimizações para melhor performance com HiDPI
+
+# Encoding Settings
+encoding:
+  # Use WebP for better compression with high resolution
+  preferred_encoding: webp
+  # Fallback to JPEG if WebP not supported
+  fallback_encoding: jpeg
+  
+  # Quality settings (0-9, higher = better quality but more bandwidth)
+  jpeg_quality: 7
+  webp_quality: 7
+  
+  # Compression level (0-9, higher = more compression but more CPU)
+  compression_level: 2
+
+# Frame Rate Settings
+frame_rate:
+  # Target frame rate (fps)
+  max_frame_rate: 30
+  # Minimum frame rate under load
+  min_frame_rate: 15
+  
+# Network Settings
+network:
+  # Enable TCP nodelay for lower latency
+  tcp_nodelay: true
+  # Buffer size in KB
+  send_buffer_size: 256
+  recv_buffer_size: 256
+
+# Performance Optimizations
+performance:
+  # Use threaded encoding for better CPU utilization
+  threaded_encoding: true
+  # Number of encoding threads (0 = auto)
+  encoding_threads: 0
+  
+  # Enable frame buffer optimizations
+  use_copy_rect: true
+  defer_update: 1
+  
+  # Pointer settings
+  pointer_latency: low
+  
+# Display Settings
+display:
+  # Pixel format (24 or 32 bit)
+  pixel_format: 24
+  
+  # Enable desktop effects (disable for better performance)
+  desktop_effects: false
+
+# Logging (disable in production for better performance)
+logging:
+  level: warning
+  # Available: debug, info, warning, error

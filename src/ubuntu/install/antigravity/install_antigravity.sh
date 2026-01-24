@@ -15,57 +15,109 @@ curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
 echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
   tee /etc/apt/sources.list.d/antigravity.list > /dev/null
 
-# Update package cache and install
-apt-get update
+# Update package cache and install (with retry for mirror sync issues)
+apt-get update --allow-releaseinfo-change || apt-get update || true
 apt-get install -y antigravity
 
 # Create wrapper script FIRST, before modifying desktop entries
 cat > /usr/local/bin/antigravity-wrapper <<'EOL'
 #!/bin/bash
-# Disable core dumps for this session
-ulimit -c 0
+# Disable core dumps for this session (soft and hard limits)
+ulimit -S -c 0
+ulimit -H -c 0 2>/dev/null || true
 
-# Launch Antigravity with minimal flags for container compatibility
+# Environment variables to disable Electron/Chromium crash reporting
+export ELECTRON_DISABLE_CRASH_REPORTER=1
+export CHROME_CRASHPAD_PIPE_NAME=/dev/null
+export BREAKPAD_DUMP_LOCATION=/dev/null
+
+# Launch Antigravity with comprehensive flags for container compatibility and crash prevention
+# Container compatibility:
 # --no-sandbox: Required in containers (no setuid sandbox available)
 # --disable-setuid-sandbox: Required in containers
 # --disable-gpu: Prevents GPU-related crashes in virtualized environments
 # --disable-dev-shm-usage: Avoids /dev/shm size limitations in containers
+#
+# Crash prevention:
+# --disable-crash-reporter: Disables Chromium crash reporter
+# --disable-breakpad: Disables Breakpad crash reporting system
+# --no-crash-upload: Prevents crash upload attempts
+# --crash-dumps-dir=/dev/null: Redirects any crash dumps to /dev/null
+# --disable-component-update: Prevents component updates that may crash
+# --disable-background-networking: Reduces background processes
+# --disable-sync: Disables sync that can cause crashes
 exec /usr/share/antigravity/antigravity \
   --no-sandbox \
   --disable-setuid-sandbox \
   --disable-gpu \
   --disable-dev-shm-usage \
+  --disable-crash-reporter \
+  --disable-breakpad \
+  --no-crash-upload \
+  --crash-dumps-dir=/dev/null \
+  --disable-component-update \
+  --disable-background-networking \
+  --disable-sync \
   "$@"
 EOL
 
 chmod +x /usr/local/bin/antigravity-wrapper
 
-# Create or update desktop entry to use wrapper
-if [ ! -f /usr/share/applications/antigravity.desktop ]; then
-  # Create custom desktop entry if not provided by package
-  cat > /usr/share/applications/antigravity.desktop <<EOL
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Antigravity IDE
-Comment=Antigravity IDE by Google
-Exec=/usr/local/bin/antigravity-wrapper %F
-Icon=antigravity
-Categories=Development;IDE;
-Terminal=false
-StartupNotify=true
-EOL
-  chmod +x /usr/share/applications/antigravity.desktop
+# CRITICAL: Move original binary and replace with wrapper
+# This ensures ALL ways of launching Antigravity use our protections
+if [ -f /usr/share/antigravity/antigravity ] && [ ! -f /usr/share/antigravity/antigravity.bin ]; then
+  echo "Moving original Antigravity binary to antigravity.bin..."
+  mv /usr/share/antigravity/antigravity /usr/share/antigravity/antigravity.bin
 fi
 
-# Update desktop entry in /usr/share/applications to use wrapper
-sed -i 's|^Exec=/usr/share/antigravity/antigravity|Exec=/usr/local/bin/antigravity-wrapper|g' /usr/share/applications/antigravity.desktop
-sed -i 's|^Exec=antigravity\s|Exec=/usr/local/bin/antigravity-wrapper |g' /usr/share/applications/antigravity.desktop
+# Create wrapper at the original binary location
+cat > /usr/share/antigravity/antigravity <<'EOL'
+#!/bin/bash
+# Antigravity wrapper - ensures crash prevention for all launch methods
+# Disable core dumps for this session (soft and hard limits)
+ulimit -S -c 0
+ulimit -H -c 0 2>/dev/null || true
 
-# Now copy the updated desktop entry to Desktop
-cp /usr/share/applications/antigravity.desktop $HOME/Desktop/
-chmod +x $HOME/Desktop/antigravity.desktop
-chown 1000:1000 $HOME/Desktop/antigravity.desktop
+# Environment variables to disable Electron/Chromium crash reporting
+export ELECTRON_DISABLE_CRASH_REPORTER=1
+export CHROME_CRASHPAD_PIPE_NAME=/dev/null
+export BREAKPAD_DUMP_LOCATION=/dev/null
+
+# Launch original Antigravity binary with comprehensive flags
+exec /usr/share/antigravity/antigravity.bin \
+  --no-sandbox \
+  --disable-setuid-sandbox \
+  --disable-gpu \
+  --disable-dev-shm-usage \
+  --disable-crash-reporter \
+  --disable-breakpad \
+  --no-crash-upload \
+  --crash-dumps-dir=/dev/null \
+  --disable-component-update \
+  --disable-background-networking \
+  --disable-sync \
+  "$@"
+EOL
+
+chmod +x /usr/share/antigravity/antigravity
+
+# Also keep the wrapper in /usr/local/bin for manual use if needed
+cp /usr/share/antigravity/antigravity /usr/local/bin/antigravity-wrapper
+
+# Update desktop entries to ensure they work (though now they'll use the wrapper automatically)
+if [ -f /usr/share/applications/antigravity.desktop ]; then
+  # Ensure desktop entry points to the wrapper location
+  sed -i 's|^Exec=/usr/share/antigravity/antigravity\.bin|Exec=/usr/share/antigravity/antigravity|g' /usr/share/applications/antigravity.desktop
+  sed -i 's|^Exec=/usr/local/bin/antigravity-wrapper|Exec=/usr/share/antigravity/antigravity|g' /usr/share/applications/antigravity.desktop
+fi
+
+# Copy desktop entry to Desktop
+if [ -f /usr/share/applications/antigravity.desktop ]; then
+  cp /usr/share/applications/antigravity.desktop $HOME/Desktop/
+  chmod +x $HOME/Desktop/antigravity.desktop
+  chown 1000:1000 $HOME/Desktop/antigravity.desktop
+fi
+
 
 # Cleanup for app layer
 chown -R 1000:0 $HOME

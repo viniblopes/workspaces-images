@@ -7,15 +7,21 @@ set -e
 # Disable core dumps to prevent large crash files on Desktop
 ulimit -c 0
 
-# Clean up any existing core dumps (safety measure)
+# Clean up any existing core dumps (safety measure) - including subdirectories
 find $HOME/Desktop -name "core.*" -type f -delete 2>/dev/null || true
-find $HOME -maxdepth 1 -name "core.*" -type f -delete 2>/dev/null || true
+find $HOME -maxdepth 2 -name "core.*" -type f -delete 2>/dev/null || true
+find $HOME/.config -name "core.*" -type f -delete 2>/dev/null || true
 
 # Verify core dumps are disabled
 if [ "$(ulimit -c)" != "0" ]; then
   echo "WARNING: Failed to disable core dumps, forcing to 0"
   ulimit -S -c 0 2>/dev/null || true
 fi
+
+# Export environment variables to disable crash reporting for Electron/Chromium apps
+export ELECTRON_DISABLE_CRASH_REPORTER=1
+export CHROME_CRASHPAD_PIPE_NAME=/dev/null
+export BREAKPAD_DUMP_LOCATION=/dev/null
 
 echo "Starting devbox initialization..."
 
