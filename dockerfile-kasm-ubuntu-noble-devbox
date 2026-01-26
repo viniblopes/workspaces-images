@@ -78,6 +78,9 @@ RUN bash $INST_DIR/ubuntu/install/misc/install_tools.sh
 # 2.1. Disable unnecessary services for CPU optimization
 RUN bash $INST_DIR/ubuntu/install/misc/disable_services.sh
 
+# 2.2. Optimize VNC quality to eliminate visual artifacts
+RUN bash $INST_DIR/ubuntu/install/misc/optimize_vnc.sh
+
 COPY ./src/ubuntu/install/tools/ $INST_DIR/ubuntu/install/tools/
 RUN bash $INST_DIR/ubuntu/install/tools/install_tools_deluxe.sh
 
